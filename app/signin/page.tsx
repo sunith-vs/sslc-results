@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, Suspense } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 import { Icons } from "@/components/icons";
@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { useSearchParams } from "next/navigation";
 
-export default function SignInPage() {
+// Wrapper component that uses the search params
+function SignInContent() {
   const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const supabase = createClient();
 
@@ -55,5 +56,14 @@ export default function SignInPage() {
       )}{" "}
       Sign in with Google
     </Button>
+  );
+}
+
+// Main component with Suspense boundary
+export default function SignInPage() {
+  return (
+    <Suspense fallback={<Button variant="outline" disabled><Icons.loaderCircle className="mr-2 size-4 animate-spin" /> Loading...</Button>}>
+      <SignInContent />
+    </Suspense>
   );
 }
