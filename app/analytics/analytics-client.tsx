@@ -38,6 +38,9 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
   const [showingResults, setShowingResults] = useState<boolean>(false);
   const [resultsCount, setResultsCount] = useState<number>(0);
   const [filteredAplusCount, setFilteredAplusCount] = useState<number>(0);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [hasMore, setHasMore] = useState<boolean>(true);
+  const pageSize = 100; // Reduced page size for better navigation
 
   const handleDistrictChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedDistrict(e.target.value);
@@ -52,14 +55,42 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
     const value = parseInt(e.target.value);
     setMaxAplusFilter(isNaN(value) ? 10 : Math.min(value, 10));
   };
+  
+  const goToPage = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    fetchFilteredData(true, pageNumber);
+  };
+  
+  const nextPage = () => {
+    const nextPageNumber = currentPage + 1;
+    setCurrentPage(nextPageNumber);
+    fetchFilteredData(true, nextPageNumber);
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 1) {
+      const prevPageNumber = currentPage - 1;
+      setCurrentPage(prevPageNumber);
+      fetchFilteredData(true, prevPageNumber);
+    }
+  };
 
-  const fetchFilteredData = async () => {
+  const fetchFilteredData = async (resetPage = true, pageNum?: number) => {
     setLoading(true);
     try {
       const supabase = createClient();
       
+      // Reset page if this is a new filter and no specific page is requested
+      if (resetPage && !pageNum) {
+        setCurrentPage(1);
+        setFilteredResults([]);
+        setHasMore(true);
+      }
+      
+      const pageToFetch = pageNum || currentPage;
+      
       // Build query based on selected filters
-      let query = supabase.from("sslc_results").select("*");
+      let query = supabase.from("sslc_results").select("*", { count: 'exact' });
       
       if (selectedDistrict) {
         query = query.ilike("school", `%${selectedDistrict}%`);
@@ -72,6 +103,9 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
       if (maxAplusFilter < 10) {
         query = query.lte("aplus", maxAplusFilter);
       }
+      
+      // Add pagination
+      query = query.range((pageToFetch - 1) * pageSize, pageToFetch * pageSize - 1);
       
       const { data, error, count } = await query.order("aplus", { ascending: false });
       
@@ -87,9 +121,20 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
         image_url: item.image_url
       })) || [];
       
+      // Update results
       setFilteredResults(processedData);
-      setResultsCount(processedData.length);
-      setFilteredAplusCount(processedData.filter(item => item.aplus === 10).length);
+      
+      // Update pagination state
+      setHasMore(count !== null && pageToFetch * pageSize < count);
+      
+      // Set total count from the API response
+      if (count !== null) {
+        setResultsCount(count);
+      } else {
+        setResultsCount(filteredResults.length + processedData.length);
+      }
+      
+      setFilteredAplusCount(filteredResults.concat(processedData).filter(item => item.aplus === 10).length);
       setShowingResults(true);
       
       // Generate district summaries
@@ -323,6 +368,55 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
                 ))}
               </tbody>
             </table>
+            
+            <div className="mt-4 flex justify-center space-x-2">
+              <Button
+                onClick={prevPage}
+                disabled={loading || currentPage <= 1}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md"
+              >
+                Previous
+              </Button>
+              
+              {/* Page number buttons */}
+              {Array.from({ length: Math.min(5, Math.ceil(resultsCount / pageSize)) }, (_, i) => {
+                // Show pages around current page
+                let pageNum;
+                if (Math.ceil(resultsCount / pageSize) <= 5) {
+                  // If 5 or fewer pages, show all
+                  pageNum = i + 1;
+                } else {
+                  // Show 2 before and 2 after current page when possible
+                  const start = Math.max(1, currentPage - 2);
+                  const end = Math.min(Math.ceil(resultsCount / pageSize), start + 4);
+                  pageNum = start + i;
+                  if (pageNum > end) return null;
+                }
+                
+                return (
+                  <Button
+                    key={pageNum}
+                    onClick={() => goToPage(pageNum)}
+                    disabled={loading}
+                    className={`px-3 py-1 rounded-md ${
+                      currentPage === pageNum
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 hover:bg-gray-300 text-gray-800"
+                    }`}
+                  >
+                    {pageNum}
+                  </Button>
+                );
+              }).filter(Boolean)}
+              
+              <Button
+                onClick={nextPage}
+                disabled={loading || !hasMore}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md"
+              >
+                Next
+              </Button>
+            </div>
           </div>
         </div>
       )}
@@ -331,9 +425,33 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
       {showingResults && filteredResults.length > 0 && (
         <div className="bg-white p-6 rounded-lg border">
           <h2 className="text-xl font-semibold mb-4">Filtered Results</h2>
-          <p className="text-sm text-gray-500 mb-4">
-            Showing {filteredResults.length} results
-          </p>
+          <div className="flex justify-between items-center mb-4">
+            <p className="text-sm text-gray-500">
+              Total: <strong>{resultsCount}</strong> results | Showing page <strong>{currentPage}</strong> ({filteredResults.length} entries)
+            </p>
+            
+            <div className="flex space-x-2">
+              <Button
+                onClick={prevPage}
+                disabled={loading || currentPage <= 1}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-sm"
+              >
+                Previous
+              </Button>
+              
+              <span className="px-3 py-1 bg-gray-100 rounded-md text-sm font-medium">
+                Page {currentPage} of {Math.ceil(resultsCount / pageSize) || 1}
+              </span>
+              
+              <Button
+                onClick={nextPage}
+                disabled={loading || !hasMore}
+                className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-sm"
+              >
+                Next
+              </Button>
+            </div>
+          </div>
           
           <div className="overflow-x-auto">
             <table className="w-full border-collapse">
@@ -348,7 +466,7 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
                 </tr>
               </thead>
               <tbody>
-                {filteredResults.slice(0, 50).map((result) => (
+                {filteredResults.map((result) => (
                   <tr key={result.id} className="hover:bg-gray-50">
                     <td className="p-2 border">{result.name || "N/A"}</td>
                     <td className="p-2 border">{result.school || "N/A"}</td>
