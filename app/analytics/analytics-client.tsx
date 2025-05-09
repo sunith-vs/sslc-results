@@ -18,6 +18,7 @@ interface ResultData {
   aplus: number | null;
   reg_no: string | null;
   district?: string;
+  image_url: string | null;
 }
 
 interface DistrictSummary {
@@ -82,7 +83,8 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
       // Process data to extract district from school name
       const processedData = data?.map(item => ({
         ...item,
-        district: item.school?.split(",").pop()?.trim() || "Unknown"
+        district: item.school?.split(",").pop()?.trim() || "Unknown",
+        image_url: item.image_url
       })) || [];
       
       setFilteredResults(processedData);
@@ -342,6 +344,7 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
                   <th className="p-2 text-left border">District</th>
                   <th className="p-2 text-left border">A+ Count</th>
                   <th className="p-2 text-left border">Reg No</th>
+                  <th className="p-2 text-left border">Image</th>
                 </tr>
               </thead>
               <tbody>
@@ -352,6 +355,20 @@ export function AnalyticsClient({ totalEntries, aplusCount, districts }: Analyti
                     <td className="p-2 border">{result.district || "N/A"}</td>
                     <td className="p-2 border">{result.aplus || 0}</td>
                     <td className="p-2 border">{result.reg_no || "N/A"}</td>
+                    <td className="p-2 border">
+                      {result.image_url ? (
+                        <a 
+                          href={result.image_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800 underline"
+                        >
+                          View Image
+                        </a>
+                      ) : (
+                        "No Image"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
