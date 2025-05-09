@@ -7,5 +7,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/protected", "/login", "/admin/:path*"],
+  matcher: ["/protected", "/login", "/admin/:path*", "/verify"],
 };

@@ -9,6 +9,42 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      sslc_results: {
+        Row: {
+          id: string
+          name: string | null
+          school: string | null
+          aplus: number | null
+          image_url: string | null
+          phone_number: string | null
+          reg_no: string | null
+          created_at: string | null
+          active: boolean | null
+        }
+        Insert: {
+          id?: string
+          name?: string | null
+          school?: string | null
+          aplus?: number | null
+          image_url?: string | null
+          phone_number?: string | null
+          reg_no?: string | null
+          created_at?: string | null
+          active?: boolean | null
+        }
+        Update: {
+          id?: string
+          name?: string | null
+          school?: string | null
+          aplus?: number | null
+          image_url?: string | null
+          phone_number?: string | null
+          reg_no?: string | null
+          created_at?: string | null
+          active?: boolean | null
+        }
+        Relationships: []
+      }
       users: {
         Row: {
           email: string
