@@ -38,6 +38,7 @@ export function ResultsSlideshow() {
       // Add to results list after animation and prepare for next animation
       const animationTimer = setTimeout(() => {
         setResults(prev => {
+          // Add new result at the beginning of the array
           // Limit to max 10 results to keep state size manageable
           const newResults = [newResult, ...prev];
           if (newResults.length > 10) {
@@ -71,7 +72,7 @@ export function ResultsSlideshow() {
           .from("sslc_results")
           .select("*")
           .eq("active", true)
-          .order("created_at", { ascending: false })
+          .order("updated_at", { ascending: false })
           .limit(10); // Limit to 10 results to keep state size manageable
 
         if (error) throw error;
