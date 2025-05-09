@@ -11,6 +11,8 @@ export function ResultsSlideshow() {
   const [isLoading, setIsLoading] = useState(true);
   const [newResult, setNewResult] = useState<Tables<"sslc_results"> | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [showAnimation, setShowAnimation] = useState(false);
   const animationQueue = useRef<Tables<"sslc_results">[]>([]);
   const supabase = createClient();
   
@@ -21,27 +23,45 @@ export function ResultsSlideshow() {
       const nextResult = animationQueue.current.shift();
       if (nextResult) {
         setNewResult(nextResult);
-        
-        // Add to results list after animation and prepare for next animation
-        setTimeout(() => {
-          setResults(prev => {
-            // Limit to max 10 results to keep state size manageable
-            const newResults = [nextResult, ...prev];
-            if (newResults.length > 10) {
-              return newResults.slice(0, 10);
-            }
-            return newResults;
-          });
-          setNewResult(null);
-          
-          // Add delay before processing next animation
-          setTimeout(() => {
-            setIsAnimating(false);
-          }, 1000); // 1 second cooldown between animations
-        }, 2000); // 2 seconds for the animation itself
+        setImageLoaded(false);
+        setShowAnimation(false);
       }
     }
   }, [isAnimating, animationQueue.current.length]);
+  
+  // Handle image loading and animation sequence
+  useEffect(() => {
+    if (newResult && imageLoaded) {
+      // Start the animation once the image is loaded
+      setShowAnimation(true);
+      
+      // Add to results list after animation and prepare for next animation
+      const animationTimer = setTimeout(() => {
+        setResults(prev => {
+          // Limit to max 10 results to keep state size manageable
+          const newResults = [newResult, ...prev];
+          if (newResults.length > 10) {
+            return newResults.slice(0, 10);
+          }
+          return newResults;
+        });
+        setNewResult(null);
+        setShowAnimation(false);
+        
+        // Add delay before processing next animation
+        setTimeout(() => {
+          setIsAnimating(false);
+        }, 1000); // 1 second cooldown between animations
+      }, 4000); // 4 seconds for the animation itself
+      
+      return () => clearTimeout(animationTimer);
+    }
+  }, [newResult, imageLoaded]);
+  
+  // Handle image onLoad event
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
 
   useEffect(() => {
     // Fetch initial active results
@@ -96,7 +116,7 @@ export function ResultsSlideshow() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-64 bg-orange-500 w-full rounded-lg">
+      <div className="flex justify-center items-center h-64 bg-orange-500 w-full">
         <p className="text-white text-xl font-bold">Loading results...</p>
       </div>
     );
@@ -104,7 +124,7 @@ export function ResultsSlideshow() {
 
   if (results.length === 0) {
     return (
-      <div className="flex justify-center items-center h-64 bg-orange-500 w-full rounded-lg">
+      <div className="flex justify-center items-center h-64 bg-orange-500 w-full">
         <p className="text-white text-xl font-bold">No results available yet</p>
       </div>
     );
@@ -114,30 +134,184 @@ export function ResultsSlideshow() {
     <div className="relative overflow-hidden">
       {/* New result animation */}
       <AnimatePresence>
-        {newResult && newResult.image_url && (
-          <motion.div
-            initial={{ y: 300, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -100, opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.5, type: "spring" }}
-            className="fixed bottom-0 left-1/2 -translate-x-1/2 z-50 mb-8"
+        {/* Animated particles background */}
+        {showAnimation && (
+          <motion.div 
+            className="fixed inset-0 z-40 overflow-hidden pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
           >
-            <motion.div className="relative w-64 h-64 rounded-lg overflow-hidden shadow-2xl border-4 border-orange-500">
-              <Image
-                src={newResult.image_url}
-                alt="New Result"
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 256px"
-                priority
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full bg-white/80"
+                style={{
+                  width: Math.random() * 10 + 5,
+                  height: Math.random() * 10 + 5,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                  y: [0, -Math.random() * 200 - 100],
+                  x: [0, (Math.random() - 0.5) * 100],
+                  opacity: [1, 0],
+                  scale: [0, 1, 0.5]
+                }}
+                transition={{
+                  duration: Math.random() * 2 + 2,
+                  ease: "easeOut",
+                  repeat: Infinity,
+                  repeatDelay: Math.random() * 2
+                }}
               />
+            ))}
+          </motion.div>
+        )}
+        
+        {/* Preload image */}
+        {newResult && newResult.image_url && !showAnimation && (
+          <div className="hidden">
+            <Image
+              src={newResult.image_url}
+              alt="Preloading"
+              width={1}
+              height={1}
+              onLoad={handleImageLoad}
+            />
+          </div>
+        )}
+        
+        {/* Animation sequence */}
+        {newResult && newResult.image_url && showAnimation && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, ease: "easeInOut" }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+          >
+            {/* Background overlay with animated gradient */}
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-orange-600/80 to-orange-500/80 backdrop-blur-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 1 }}
+              onClick={() => {
+                setNewResult(null);
+                setShowAnimation(false);
+              }}
+            />
+            
+            {/* Student name */}
+            <motion.div
+              className="absolute top-20 left-0 right-0 text-center"
+              initial={{ y: -80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ delay: 0.3, duration: 0.8, type: "spring", stiffness: 50 }}
+            >
+              <h2 className="text-4xl font-bold text-white drop-shadow-lg">
+                {newResult.name || "New Student"}
+              </h2>
+              <motion.div
+                className="text-xl text-white/90 mt-2"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.6, duration: 0.5 }}
+              >
+                {newResult.school || ""}
+              </motion.div>
+            </motion.div>
+            
+            {/* Main image with effects */}
+            <motion.div 
+              className="relative rounded-xl overflow-hidden shadow-2xl"
+              initial={{ scale: 0.2, y: 100, opacity: 0 }}
+              animate={{ 
+                scale: 1, 
+                y: 0,
+                opacity: 1,
+                boxShadow: [
+                  "0px 0px 0px 0px rgba(255, 255, 255, 0)",
+                  "0px 0px 60px 20px rgba(255, 255, 255, 0.9)",
+                  "0px 0px 30px 10px rgba(255, 255, 255, 0.6)"
+                ]
+              }}
+              transition={{ 
+                type: "spring", 
+                bounce: 0.3,
+                delay: 0.2,
+                duration: 1,
+                boxShadow: {
+                  repeat: Infinity,
+                  repeatType: "reverse",
+                  duration: 3,
+                  ease: "easeInOut"
+                }
+              }}
+            >
+              <div className="relative w-[400px] h-[500px]">
+                <Image
+                  src={newResult.image_url}
+                  alt={newResult.name || "Student Result"}
+                  fill
+                  className="object-contain"
+                  sizes="(max-width: 768px) 100vw, 400px"
+                  priority
+                />
+              </div>
+              
+              {/* A+ count badge */}
+              <motion.div
+                className="absolute -top-10 -right-10 w-32 h-32 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex flex-col items-center justify-center shadow-lg"
+                initial={{ scale: 0, opacity: 0, rotate: -20 }}
+                animate={{ 
+                  scale: [0, 1.2, 1], 
+                  opacity: 1, 
+                  rotate: [0, 15, -15, 10, -10, 5, -5, 0],
+                  y: [0, -10, 0, -5, 0]
+                }}
+                transition={{ 
+                  delay: 1, 
+                  duration: 1.5,
+                  type: "spring",
+                  stiffness: 200,
+                  y: {
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    duration: 2,
+                    ease: "easeInOut"
+                  }
+                }}
+              >
+                <span className="text-white text-lg font-bold">A+</span>
+                <span className="text-white text-3xl font-bold">{newResult.aplus || 0}</span>
+              </motion.div>
+            </motion.div>
+            
+            {/* Congratulations message */}
+            <motion.div
+              className="absolute bottom-20 left-0 right-0 text-center"
+              initial={{ y: 80, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ 
+                delay: 1.8, 
+                duration: 0.8, 
+                type: "spring", 
+                stiffness: 50 
+              }}
+            >
+              <h3 className="text-2xl font-bold text-white drop-shadow-lg">
+                Congratulations!
+              </h3>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Horizontal image row */}
-      <div className="flex overflow-x-auto py-4 gap-6 items-center justify-start">
+      <div className="flex overflow-x-auto gap-4 items-center justify-start">
         <AnimatePresence>
           {results.map((result, index) => (
             result.image_url && (
