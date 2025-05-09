@@ -253,13 +253,12 @@ export function ResultsSlideshow() {
               }}
             >
               <div className="relative w-[400px] h-[500px]">
-                <Image
+                <img
                   src={newResult.image_url}
                   alt={newResult.name || "Student Result"}
-                  fill
+                  style={{width: '100%', height: '100%', position: 'absolute'}}
                   className="object-contain"
-                  sizes="(max-width: 768px) 100vw, 400px"
-                  priority
+                  loading="eager"
                 />
               </div>
               
@@ -326,13 +325,12 @@ export function ResultsSlideshow() {
                 className="flex-shrink-0 h-[80vh] max-h-[600px]"
               >
                 <div className="relative h-full rounded-lg overflow-hidden shadow-lg">
-                  <Image
+                  <img
                     src={result.image_url}
                     alt="Student Result"
-                    width={500}
-                    height={800}
+                    width="500"
+                    height="800"
                     className="h-full w-auto object-contain"
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                   />
                 </div>
               </motion.div>
