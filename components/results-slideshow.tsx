@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
+
 import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { Tables } from "@/database.types";
@@ -173,11 +173,11 @@ export function ResultsSlideshow() {
         {/* Preload image */}
         {newResult && newResult.image_url && !showAnimation && (
           <div className="hidden">
-            <Image
+            <img
               src={newResult.image_url}
               alt="Preloading"
-              width={1}
-              height={1}
+              width="1"
+              height="1"
               onLoad={handleImageLoad}
             />
           </div>

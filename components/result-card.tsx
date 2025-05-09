@@ -1,4 +1,4 @@
-import Image from "next/image";
+
 import { Tables } from "@/database.types";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,13 +18,13 @@ export function ResultCard({ result, onApprove, onDelete }: ResultCardProps) {
       <CardContent className="space-y-3 p-4 pt-0">
         {result.image_url && (
           <div className="flex justify-center w-full">
-            <Image
+            <img
               src={result.image_url}
               alt={result.name || "Student"}
-              width={300}
-              height={300}
+              width="300"
+              height="300"
               className="rounded-md max-h-[350px] w-auto h-auto object-contain"
-              priority
+              loading="eager"
             />
           </div>
         )}
