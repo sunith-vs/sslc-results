@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "SSLC Results 2025",
+  title: "+2 results",
 };
 
 export default function RootLayout({

@@ -41,7 +41,7 @@ export function IntroAnimation() {
               repeat: 1,
             }}
           >
-            SSLC
+            Eduport +2
           </motion.h1>
           <motion.h2 
             className="text-4xl font-semibold text-white"
@@ -49,7 +49,7 @@ export function IntroAnimation() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.5 }}
           >
-            RESULTS 2025
+            RESULTS  2025
           </motion.h2>
         </motion.div>
       </div>

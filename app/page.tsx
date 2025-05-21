@@ -8,7 +8,7 @@ export default function HomePage() {
       
       <div className="w-full">
         <h1 className="text-3xl font-bold text-center text-orange-600 mb-4 pt-2">
-          SSLC Results 2025
+          +2 results 2025 Eduport.
         </h1>
         
         <ResultsSlideshow />
