@@ -20,7 +20,6 @@ export default function RootLayout({
       <body className={inter.className}>
         {/* MainNav removed */}
         <main className="flex-1">{children}</main>
-
         <Toaster />
       </body>
     </html>
